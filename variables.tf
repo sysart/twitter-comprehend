@@ -8,3 +8,4 @@ variable "access_token" {}
 variable "access_token_secret" {}
 variable "api_key" {}
 variable "api_secret" {}
+variable "environment_name" {}

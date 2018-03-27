@@ -20,6 +20,7 @@ The lambda function and other resources are deployed using [Terraform](https://w
 * `aws_access_key` and `aws_secret_key` Can be found in AWS IAM > Users > Your user > Security credentials
 * `access_token`, `access_token_secret`, `api_key` and `api_secret` Are twitter API credentials which can be found [here](https://apps.twitter.com/) > Select your app > Keys and Access Tokens
 * `slack_url` Can be found [here](https://api.slack.com/apps) > Select your app > Incoming webhooks > Webhook url
+* `environment_name` An environment name of your choosing, will be used as a suffix for AWS resource names
 * You can also store these variables in a file named `terrafrom.tfvars` which should be located in the root directory. This way you do not need to enter them each time you run `terraform apply`. The content of the file should be in the following format
 
 ```

@@ -4,6 +4,7 @@ from requests_oauthlib import OAuth1
 import os
 import json
 
+
 def lambda_handler(event, handler):
     print("Fetching new tweets")
     newMessages = get_new_messages()

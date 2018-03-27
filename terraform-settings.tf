@@ -1,11 +1,11 @@
 provider "aws" {
   access_key = "${var.aws_access_key}"
   secret_key = "${var.aws_secret_key}"
-  region     = "${var.region}"
+  region = "${var.region}"
 }
 
 resource "aws_iam_role" "twitter-comprehend-lambda-role" {
-  name = "iam_for_lambda"
+  name = "twitter-comprehend-iam-${var.environment_name}"
 
   assume_role_policy = <<EOF
 {
@@ -46,42 +46,45 @@ provider "archive" {
 resource "null_resource" "install_dependencies" {
   provisioner "local-exec" {
     command = "pip install --target=${path.root}/lambda-function requests requests_oauthlib"
-    interpreter = ["PowerShell", "-Command"]
+    interpreter = [
+      "PowerShell",
+      "-Command"]
   }
 }
 
 data "archive_file" "lambda_archive" {
-    type        = "zip"
-    source_dir = "${path.module}/lambda-function/"
-    output_path = "${path.root}/twitter-comprehend.zip"
-    depends_on       = ["null_resource.install_dependencies"]
+  type = "zip"
+  source_dir = "${path.module}/lambda-function/"
+  output_path = "${path.root}/twitter-comprehend.zip"
+  depends_on = [
+    "null_resource.install_dependencies"]
 }
 
 resource "aws_s3_bucket" "twitter-comprehend-bucket" {
-  bucket = "twitter-comprehend-bucket"
-  acl    = "private"
+  bucket = "twitter-comprehend-bucket-${var.environment_name}"
+  acl = "private"
 
   tags {
-    Name        = "twitter-comprehend-bucket"
+    Name = "twitter-comprehend-bucket-${var.environment_name}"
     Environment = "Dev"
   }
 }
 
 resource "aws_s3_bucket_object" "twitter-comprehend-bucket-object" {
-    bucket = "${aws_s3_bucket.twitter-comprehend-bucket.id}"
-    acl    = "private"
-    key    = "twitter-query-parameters.txt"
-    source = "${path.root}/twitter-query-parameters.txt"
+  bucket = "${aws_s3_bucket.twitter-comprehend-bucket.id}"
+  acl = "private"
+  key = "twitter-query-parameters.txt"
+  source = "${path.root}/twitter-query-parameters.txt"
 }
 
 resource "aws_lambda_function" "twitter-comprehend" {
-  filename         = "${data.archive_file.lambda_archive.output_path}"
-  function_name    = "twitter-comprehend"
-  role             = "${aws_iam_role.twitter-comprehend-lambda-role.arn}"
-  handler          = "lambda_function.lambda_handler"
+  filename = "${data.archive_file.lambda_archive.output_path}"
+  function_name = "twitter-comprehend-${var.environment_name}"
+  role = "${aws_iam_role.twitter-comprehend-lambda-role.arn}"
+  handler = "lambda_function.lambda_handler"
   source_code_hash = "${data.archive_file.lambda_archive.output_sha}"
-  runtime          = "python3.6"
-  timeout          = 60
+  runtime = "python3.6"
+  timeout = 60
 
   environment {
     variables = {
@@ -99,21 +102,20 @@ resource "aws_lambda_function" "twitter-comprehend" {
 }
 
 resource "aws_cloudwatch_event_rule" "every_five_minutes" {
-    name = "every-five-minutes"
-    description = "Fires every five minutes"
-    schedule_expression = "rate(5 minutes)"
+  name = "every-five-minutes-${var.environment_name}"
+  description = "Fires every five minutes"
+  schedule_expression = "rate(5 minutes)"
 }
 
 resource "aws_cloudwatch_event_target" "check_twitter_every_five_minutes" {
-    rule = "${aws_cloudwatch_event_rule.every_five_minutes.name}"
-    target_id = "twitter-comprehend"
-    arn = "${aws_lambda_function.twitter-comprehend.arn}"
+  rule = "${aws_cloudwatch_event_rule.every_five_minutes.name}"
+  arn = "${aws_lambda_function.twitter-comprehend.arn}"
 }
 
 resource "aws_lambda_permission" "allow_cloudwatch_to_call_check_twitter" {
-    statement_id = "AllowExecutionFromCloudWatch"
-    action = "lambda:InvokeFunction"
-    function_name = "${aws_lambda_function.twitter-comprehend.function_name}"
-    principal = "events.amazonaws.com"
-    source_arn = "${aws_cloudwatch_event_rule.every_five_minutes.arn}"
+  statement_id = "AllowExecutionFromCloudWatch"
+  action = "lambda:InvokeFunction"
+  function_name = "${aws_lambda_function.twitter-comprehend.function_name}"
+  principal = "events.amazonaws.com"
+  source_arn = "${aws_cloudwatch_event_rule.every_five_minutes.arn}"
 }
