@@ -1,0 +1,9 @@
+.terraform/
+.idea/
+lambda-function/.idea/
+*.tfvars
+*.tfstate
+*.tfstate.backup
+twitter-comprehend.zip
+lambda-function/*
+!/lambda-function/lambda_function.py
