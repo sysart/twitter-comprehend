@@ -1,1 +1,1 @@
-?q=sysart+-from%3Asysartoy&count=100&since=2018-03-26
+?q=sysart+OR+%40SysartOy+-from%3Asysartoy&count=100&since=2018-03-28
