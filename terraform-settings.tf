@@ -4,8 +4,16 @@ provider "aws" {
   region = "${var.region}"
 }
 
+terraform {
+ backend "s3" {
+   bucket = "sysart.cfg"
+   region = "eu-central-1"
+   key    = "twitter-comprehend/tf/state"
+ }
+}
+
 resource "aws_iam_role" "twitter-comprehend-lambda-role" {
-  name = "twitter-comprehend-iam-${var.environment_name}"
+  name = "twitter-comprehend-iam-${terraform.workspace}"
 
   assume_role_policy = <<EOF
 {
@@ -61,11 +69,11 @@ data "archive_file" "lambda_archive" {
 }
 
 resource "aws_s3_bucket" "twitter-comprehend-bucket" {
-  bucket = "twitter-comprehend-bucket-${var.environment_name}"
+  bucket = "twitter-comprehend-bucket-${terraform.workspace}"
   acl = "private"
 
   tags {
-    Name = "twitter-comprehend-bucket-${var.environment_name}"
+    Name = "twitter-comprehend-bucket-${terraform.workspace}"
     Environment = "Dev"
   }
 }
@@ -79,7 +87,7 @@ resource "aws_s3_bucket_object" "twitter-comprehend-bucket-object" {
 
 resource "aws_lambda_function" "twitter-comprehend" {
   filename = "${data.archive_file.lambda_archive.output_path}"
-  function_name = "twitter-comprehend-${var.environment_name}"
+  function_name = "twitter-comprehend-${terraform.workspace}"
   role = "${aws_iam_role.twitter-comprehend-lambda-role.arn}"
   handler = "lambda_function.lambda_handler"
   source_code_hash = "${data.archive_file.lambda_archive.output_sha}"
@@ -102,7 +110,7 @@ resource "aws_lambda_function" "twitter-comprehend" {
 }
 
 resource "aws_cloudwatch_event_rule" "every_five_minutes" {
-  name = "every-five-minutes-${var.environment_name}"
+  name = "every-five-minutes-${terraform.workspace}"
   description = "Fires every five minutes"
   schedule_expression = "rate(5 minutes)"
 }
