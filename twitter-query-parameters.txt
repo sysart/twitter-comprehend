@@ -1,1 +1,1 @@
-?q=sysart+OR+%40SysartOy+-filter:retweets&count=100&since=2018-04-10
+?q=sysart+OR+%40SysartOy&count=100&since=2018-04-11
