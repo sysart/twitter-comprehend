@@ -12,11 +12,19 @@ def lambda_handler(event, handler):
     print("{} new tweets found, sending to Slack".format(len(newMessages.get('statuses'))))
     for message in newMessages.get('statuses'):
         comprehendResponse = send_to_comprehend(message.get('text'))
-        content = "https://twitter.com/{}/status/{}\n{}".format(message.get('user').get('screen_name'),
-                                                                message.get('id'), comprehendResponse)
+        isRetweet = message.get('retweeted_status') is not None;
+
+        if isRetweet:
+            content = "<https://twitter.com/{0}|@{0}> Retweeted a <https://twitter.com/{0}/status/{1}|tweet> written by <https://twitter.com/{2}|@{2}>".format(
+                message.get('user').get('screen_name'), message.get('id'),
+                message.get('retweeted_status').get('user').get('screen_name'))
+        else:
+            content = "<https://twitter.com/{}/status/{}|View tweet>\n{}".format(message.get('user').get('screen_name'),
+                                                                                 message.get('id'), comprehendResponse)
 
         data = {
-            "text": content
+            "text": content,
+            "unfurl_media": not isRetweet
         }
 
         response = requests.post(os.environ['SLACK_URL'], data=json.dumps(data))
